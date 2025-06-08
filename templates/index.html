@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Detection System</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #1f1f1f; /* Dark background */
+            color: #ddd; /* Light text color */
+        }
+
+        header {
+            background: #333;
+            color: #ddd;
+            text-align: center;
+            padding: 20px 0; /* Increased padding */
+            font-size: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+        }
+
+        .image-container {
+            position: relative;
+            width: 80%; /* Set default width for laptop screens */
+            max-width: 600px; /* Set maximum width for larger screens */
+            margin: 0 auto;
+            margin-top: 20px;
+            border: 1px solid #555; /* Darker border */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4); /* Stronger shadow */
+            min-height: 200px;
+
+        }
+
+        .image-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            font-size: 24px;
+            color: #ddd; /* Light text color */
+            text-align: center;
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+            z-index: -1; /* Behind the image */
+            animation: pulseAnimation 2s infinite; /* Apply pulse animation */
+        }
+
+        @keyframes pulseAnimation {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border: 1px solid #555; /* Darker border */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4); /* Stronger shadow */
+            position: relative;
+            z-index: 1; /* Above the text */
+        }
+
+        /* Media query for laptops and desktops */
+        @media only screen and (min-width: 768px) {
+            .image-container {
+                height: 450px; /* Set height to 480px for laptops and desktops */
+            }
+        }
+
+        /* Button styles */
+        .emergency-button {
+            display: block;
+            width: 80%;
+            max-width: 300px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #FF6347; /* Red color for emergency look */
+            color: #fff;
+            text-align: center;
+            font-size: 18px;
+            text-decoration: none;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .emergency-button:hover {
+            background-color: #D32F2F; /* Darker red on hover */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        Advanced Detection System
+    </header>
+    <div class="image-container">
+        <div class="image-text">Waiting for Video Feed..</div>
+        <img src="{{ url_for('video_feed') }}" alt="Video Feed" />
+    </div>
+
+    <!-- Emergency buttons -->
+    <div id="emergencyButtons">
+        <!-- Buttons will be added dynamically based on device type -->
+    </div>
+
+    <script>
+        // Check if the device is a mobile device
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        // Function to add buttons based on device type
+        function addButtons() {
+            const emergencyButtonsDiv = document.getElementById('emergencyButtons');
+            
+            // If it's a mobile device, add two buttons
+            if (isMobile) {
+                emergencyButtonsDiv.innerHTML = `
+                    <a href="tel:100" class="emergency-button">Call Police</a>
+                    <a href="tel:101" class="emergency-button">Call Fire</a>
+                    <a href="https://tn.erss.in/request-help.html" class="emergency-button" target="_blank">Connect Emergency Service</a>
+                `;
+            }
+            // If it's not a mobile device, add one button
+            else {
+                emergencyButtonsDiv.innerHTML = `
+                    <a href="https://tn.erss.in/request-help.html" class="emergency-button" target="_blank">Connect Emergency Service</a>
+                `;
+            }
+        }
+
+        // Call the function to add buttons when the page loads
+        addButtons();
+    </script>
+</body>
+</html>

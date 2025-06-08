@@ -1,0 +1,21 @@
+import queue
+
+# Create a queue
+my_queue = queue.Queue()
+
+# Enqueue (add) elements to the queue
+my_queue.put(10)
+my_queue.put(20)
+my_queue.put(30)
+
+# Dequeue (remove) elements from the queue
+item = my_queue.get()
+print("Dequeued item:", item)
+item = my_queue.get()
+print("Dequeued item:", item)
+item = my_queue.get()
+print("Dequeued item:", item)
+
+# Check if the queue is empty
+is_empty = my_queue.empty()
+print("Is the queue empty?", is_empty)
