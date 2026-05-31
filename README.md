@@ -99,6 +99,8 @@ More examples:
 - `POST /api/actions/{id}/approve` - approve an action
 - `POST /api/actions/{id}/execute` - execute an approved or low-risk action
 - `GET /api/memory/summary` - local incident memory summary
+- `GET /api/memory/search?q=fire%20front%20door` - local searchable incident memory
+- `GET /api/events/{id}/similar` - find similar incidents for an event
 
 FastAPI also exposes OpenAPI docs at `http://localhost:8080/docs`.
 

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from surveilfusion.actions.executor import ActionExecutor
@@ -58,6 +59,40 @@ def test_agent_and_memory_outputs() -> None:
     assert [action.kind for action in proposed_actions] == [ActionKind.notify, ActionKind.pin_live_view]
     assert summary["unacknowledged"] == 1
     assert mqtt_payload.topic == "surveilfusion/events/driveway/unknown_face"
+
+
+def test_memory_search_and_similarity() -> None:
+    memory = EventMemory()
+    fire_event = SurveillanceEvent(
+        camera_id="front-door",
+        kind=DetectionKind.fire,
+        severity=EventSeverity.critical,
+        title="Fire detected at front door",
+        summary="Flames near the front entry.",
+        created_at=datetime.now(timezone.utc),
+    )
+    old_face_event = SurveillanceEvent(
+        camera_id="front-door",
+        kind=DetectionKind.unknown_face,
+        severity=EventSeverity.medium,
+        title="Unknown face at front door",
+        summary="Visitor near the entry.",
+        created_at=datetime.now(timezone.utc) - timedelta(days=10),
+    )
+    driveway_event = SurveillanceEvent(
+        camera_id="driveway",
+        kind=DetectionKind.fire,
+        severity=EventSeverity.high,
+        title="Smoke in driveway",
+        summary="Smoke plume near parked car.",
+    )
+
+    results = memory.search([old_face_event, driveway_event, fire_event], "fire front door")
+    similar = memory.similar([old_face_event, driveway_event, fire_event], fire_event.id)
+
+    assert results[0].event.id == fire_event.id
+    assert "front" in results[0].matched_terms
+    assert similar[0].event.id == old_face_event.id
 
 
 def test_action_policy_store_and_executor(tmp_path: Path) -> None:

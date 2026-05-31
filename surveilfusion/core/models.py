@@ -137,3 +137,10 @@ class ActionPolicyDecision(BaseModel):
     risk: ActionRisk
     requires_approval: bool
     reason: str
+
+
+class MemorySearchResult(BaseModel):
+    event: SurveillanceEvent
+    score: float
+    matched_terms: list[str] = Field(default_factory=list)
+    rationale: str

@@ -1,11 +1,14 @@
 const camerasEl = document.querySelector("#cameras");
 const eventsEl = document.querySelector("#events");
 const actionsEl = document.querySelector("#actions");
+const memoryResultsEl = document.querySelector("#memory-results");
 const cameraCountEl = document.querySelector("#camera-count");
 const eventCountEl = document.querySelector("#event-count");
 const openCountEl = document.querySelector("#open-count");
 const actionCountEl = document.querySelector("#action-count");
 const demoButton = document.querySelector("#demo-event");
+const memoryForm = document.querySelector("#memory-form");
+const memoryQuery = document.querySelector("#memory-query");
 
 async function fetchJson(path, options) {
   const response = await fetch(path, options);
@@ -64,6 +67,20 @@ function renderActions(actions) {
   `).join("") || "<p class=\"meta\">No actions queued.</p>";
 }
 
+function renderMemoryResults(results) {
+  memoryResultsEl.innerHTML = results.map((result) => `
+    <article class="event">
+      <strong class="${result.event.severity}">${result.event.title}</strong>
+      <p>${result.event.summary}</p>
+      <div class="meta">
+        <span class="pill">score ${result.score}</span>
+        <span class="pill">${result.event.camera_id}</span>
+        <span class="pill">${result.matched_terms.join(", ")}</span>
+      </div>
+    </article>
+  `).join("") || "<p class=\"meta\">No matching incidents.</p>";
+}
+
 async function refresh() {
   const [cameras, events, actions] = await Promise.all([
     fetchJson("/api/cameras"),
@@ -78,6 +95,17 @@ async function refresh() {
 demoButton.addEventListener("click", async () => {
   await fetchJson("/api/events/demo", { method: "POST" });
   await refresh();
+});
+
+memoryForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const query = memoryQuery.value.trim();
+  if (!query) {
+    renderMemoryResults([]);
+    return;
+  }
+  const results = await fetchJson(`/api/memory/search?q=${encodeURIComponent(query)}`);
+  renderMemoryResults(results);
 });
 
 document.addEventListener("click", async (event) => {

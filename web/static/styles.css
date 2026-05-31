@@ -65,6 +65,17 @@ button {
   cursor: pointer;
 }
 
+input {
+  min-height: 42px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #0e1413;
+  color: var(--text);
+  font: inherit;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -167,6 +178,13 @@ small {
   gap: 8px;
 }
 
+.search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 @media (max-width: 800px) {
   .topbar,
   .panel-head {
@@ -175,7 +193,8 @@ small {
   }
 
   .metrics,
-  .layout {
+  .layout,
+  .search-row {
     grid-template-columns: 1fr;
   }
 }

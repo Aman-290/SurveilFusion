@@ -66,6 +66,7 @@ SurveilFusion should become a local-first AI CCTV command center that upgrades e
 
 - New FastAPI application package.
 - Local event store and incident memory summary.
+- Searchable local incident memory with recency and severity ranking.
 - Deterministic incident agent fallback.
 - Policy-gated remote action center with approval and execution APIs.
 - MQTT payload conversion.

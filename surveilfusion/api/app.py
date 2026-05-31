@@ -171,6 +171,28 @@ async def memory_summary() -> dict[str, object]:
     return memory.summarize(store.latest(limit=500))
 
 
+@app.get("/api/memory/search")
+async def memory_search(
+    q: str,
+    limit: int = 10,
+    camera_id: str | None = None,
+    kind: str | None = None,
+) -> list[dict]:
+    results = memory.search(
+        store.latest(limit=500),
+        q,
+        limit=limit,
+        camera_id=camera_id,
+        kind=kind,
+    )
+    return [result.model_dump(mode="json") for result in results]
+
+
+@app.get("/api/events/{event_id}/similar")
+async def similar_events(event_id: str, limit: int = 5) -> list[dict]:
+    return [result.model_dump(mode="json") for result in memory.similar(store.latest(limit=500), event_id, limit=limit)]
+
+
 @app.websocket("/ws/events")
 async def events_socket(websocket: WebSocket) -> None:
     await websocket.accept()
