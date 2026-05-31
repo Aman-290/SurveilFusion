@@ -92,7 +92,12 @@ More examples:
 - `GET /api/events` - latest events
 - `POST /api/events/demo` - create a synthetic event for setup testing
 - `GET /api/events/{id}/recommendation` - incident agent recommendation
+- `POST /api/events/{id}/actions/propose` - create policy-scored action proposals for an event
 - `POST /api/events/{id}/ack` - acknowledge an event
+- `GET /api/actions` - latest policy-gated remote actions
+- `POST /api/actions` - request a remote action
+- `POST /api/actions/{id}/approve` - approve an action
+- `POST /api/actions/{id}/execute` - execute an approved or low-risk action
 - `GET /api/memory/summary` - local incident memory summary
 
 FastAPI also exposes OpenAPI docs at `http://localhost:8080/docs`.

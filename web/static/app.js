@@ -1,8 +1,10 @@
 const camerasEl = document.querySelector("#cameras");
 const eventsEl = document.querySelector("#events");
+const actionsEl = document.querySelector("#actions");
 const cameraCountEl = document.querySelector("#camera-count");
 const eventCountEl = document.querySelector("#event-count");
 const openCountEl = document.querySelector("#open-count");
+const actionCountEl = document.querySelector("#action-count");
 const demoButton = document.querySelector("#demo-event");
 
 async function fetchJson(path, options) {
@@ -37,22 +39,59 @@ function renderEvents(events) {
         <span class="pill">${event.kind}</span>
         <span class="pill">${new Date(event.created_at).toLocaleString()}</span>
       </div>
+      <button class="inline-action" data-propose="${event.id}" type="button">Propose actions</button>
     </article>
   `).join("") || "<p class=\"meta\">No incidents yet.</p>";
 }
 
+function renderActions(actions) {
+  actionCountEl.textContent = actions.length;
+  actionsEl.innerHTML = actions.map((action) => `
+    <article class="event">
+      <strong class="${action.risk === "high" ? "critical" : ""}">${action.kind.replaceAll("_", " ")}</strong>
+      <p>${action.reason}</p>
+      <div class="meta">
+        <span class="pill">${action.camera_id}</span>
+        <span class="pill">${action.status}</span>
+        <span class="pill">${action.risk} risk</span>
+        <span class="pill">${action.requires_approval ? "approval required" : "auto"}</span>
+      </div>
+      <div class="button-row">
+        <button class="inline-action" data-approve="${action.id}" type="button">Approve</button>
+        <button class="inline-action" data-execute="${action.id}" type="button">Execute</button>
+      </div>
+    </article>
+  `).join("") || "<p class=\"meta\">No actions queued.</p>";
+}
+
 async function refresh() {
-  const [cameras, events] = await Promise.all([
+  const [cameras, events, actions] = await Promise.all([
     fetchJson("/api/cameras"),
     fetchJson("/api/events"),
+    fetchJson("/api/actions"),
   ]);
   renderCameras(cameras);
   renderEvents(events);
+  renderActions(actions);
 }
 
 demoButton.addEventListener("click", async () => {
   await fetchJson("/api/events/demo", { method: "POST" });
   await refresh();
+});
+
+document.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+
+  const proposeId = target.dataset.propose;
+  const approveId = target.dataset.approve;
+  const executeId = target.dataset.execute;
+
+  if (proposeId) await fetchJson(`/api/events/${proposeId}/actions/propose`, { method: "POST" });
+  if (approveId) await fetchJson(`/api/actions/${approveId}/approve`, { method: "POST" });
+  if (executeId) await fetchJson(`/api/actions/${executeId}/execute`, { method: "POST" });
+  if (proposeId || approveId || executeId) await refresh();
 });
 
 refresh().catch((error) => {

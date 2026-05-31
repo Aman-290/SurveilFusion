@@ -20,6 +20,25 @@ SurveilFusion should support remote control and agentic automation without turni
 - Move PTZ preset.
 - Open a two-way audio session.
 
+## Implemented Action Flow
+
+SurveilFusion now represents remote control as an auditable action request:
+
+1. Agent or operator creates an action.
+2. Policy assigns risk and approval requirements.
+3. Low-risk actions can execute immediately.
+4. Medium and high-risk actions must be approved before execution.
+5. Every status change is stored in the local SQLite database.
+
+Current API surface:
+
+- `GET /api/actions`
+- `POST /api/actions`
+- `POST /api/actions/{id}/approve`
+- `POST /api/actions/{id}/deny`
+- `POST /api/actions/{id}/execute`
+- `POST /api/events/{id}/actions/propose`
+
 ## Guardrails
 
 - Deny public unauthenticated remote control.

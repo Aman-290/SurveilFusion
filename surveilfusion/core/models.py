@@ -80,3 +80,60 @@ class AgentRecommendation(BaseModel):
     rationale: str
     recommended_actions: list[str]
     automation_plan: list[str] = Field(default_factory=list)
+
+
+class ActionKind(str, Enum):
+    notify = "notify"
+    pin_live_view = "pin_live_view"
+    start_recording = "start_recording"
+    publish_mqtt = "publish_mqtt"
+    trigger_home_assistant_scene = "trigger_home_assistant_scene"
+    move_ptz_preset = "move_ptz_preset"
+    open_two_way_audio = "open_two_way_audio"
+
+
+class ActionStatus(str, Enum):
+    proposed = "proposed"
+    approved = "approved"
+    denied = "denied"
+    executed = "executed"
+    failed = "failed"
+
+
+class ActionRisk(str, Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+
+
+class ActionRequest(BaseModel):
+    id: str = Field(default_factory=lambda: uuid4().hex)
+    kind: ActionKind
+    camera_id: str
+    event_id: str | None = None
+    reason: str
+    requested_by: str = "agent"
+    status: ActionStatus = ActionStatus.proposed
+    risk: ActionRisk = ActionRisk.low
+    requires_approval: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    approved_at: datetime | None = None
+    executed_at: datetime | None = None
+    result: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ActionCreate(BaseModel):
+    kind: ActionKind
+    camera_id: str
+    event_id: str | None = None
+    reason: str
+    requested_by: str = "agent"
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ActionPolicyDecision(BaseModel):
+    allowed: bool
+    risk: ActionRisk
+    requires_approval: bool
+    reason: str

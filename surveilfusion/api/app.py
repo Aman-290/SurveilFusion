@@ -5,14 +5,24 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from surveilfusion.actions.executor import ActionExecutor
+from surveilfusion.actions.policy import ActionPolicy
 from surveilfusion.agents.incident_agent import IncidentAgent
 from surveilfusion.camera.go2rtc import generate_frigate_camera_block, generate_go2rtc_config
 from surveilfusion.camera.probe import probe_camera
 from surveilfusion.camera.registry import CameraRegistry
 from surveilfusion.core.config import get_settings
-from surveilfusion.core.models import Detection, DetectionKind, EventSeverity, SurveillanceEvent
+from surveilfusion.core.models import (
+    ActionCreate,
+    ActionRequest,
+    Detection,
+    DetectionKind,
+    EventSeverity,
+    SurveillanceEvent,
+)
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.memory.event_memory import EventMemory
+from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
 
 settings = get_settings()
@@ -20,6 +30,9 @@ registry = CameraRegistry(settings.cameras_file)
 store = EventStore(settings.data_dir / "surveilfusion.db")
 agent = IncidentAgent()
 memory = EventMemory()
+action_store = ActionStore(settings.data_dir / "surveilfusion.db")
+action_policy = ActionPolicy()
+action_executor = ActionExecutor()
 
 app = FastAPI(
     title="SurveilFusion",
@@ -100,9 +113,57 @@ async def recommendation(event_id: str) -> dict:
     raise HTTPException(status_code=404, detail="Event not found")
 
 
+@app.post("/api/events/{event_id}/actions/propose")
+async def propose_event_actions(event_id: str) -> list[dict]:
+    for event in store.latest(limit=250):
+        if event.id == event_id:
+            actions = []
+            for proposal in agent.propose_actions(event):
+                action = _create_action(proposal)
+                actions.append(action.model_dump(mode="json"))
+            return actions
+    raise HTTPException(status_code=404, detail="Event not found")
+
+
 @app.post("/api/events/{event_id}/ack")
 async def acknowledge(event_id: str) -> dict[str, bool]:
     return {"acknowledged": store.acknowledge(event_id)}
+
+
+@app.get("/api/actions")
+async def actions(limit: int = 50) -> list[dict]:
+    return [action.model_dump(mode="json") for action in action_store.latest(limit=limit)]
+
+
+@app.post("/api/actions")
+async def create_action(action: ActionCreate) -> dict:
+    return _create_action(action).model_dump(mode="json")
+
+
+@app.post("/api/actions/{action_id}/approve")
+async def approve_action(action_id: str) -> dict:
+    action = action_store.approve(action_id)
+    if action is None:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return action.model_dump(mode="json")
+
+
+@app.post("/api/actions/{action_id}/deny")
+async def deny_action(action_id: str, reason: str = "Denied by operator.") -> dict:
+    action = action_store.deny(action_id, reason=reason)
+    if action is None:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return action.model_dump(mode="json")
+
+
+@app.post("/api/actions/{action_id}/execute")
+async def execute_action(action_id: str) -> dict:
+    action = action_store.get(action_id)
+    if action is None:
+        raise HTTPException(status_code=404, detail="Action not found")
+    action = action_executor.execute(action)
+    action_store.add(action)
+    return action.model_dump(mode="json")
 
 
 @app.get("/api/memory/summary")
@@ -119,6 +180,26 @@ async def events_socket(websocket: WebSocket) -> None:
             await websocket.receive_text()
     except WebSocketDisconnect:
         return
+
+
+def _create_action(action: ActionCreate) -> ActionRequest:
+    decision = action_policy.evaluate(action)
+    if not decision.allowed:
+        raise HTTPException(status_code=403, detail=decision.reason)
+    action_request = ActionRequest(
+        kind=action.kind,
+        camera_id=action.camera_id,
+        event_id=action.event_id,
+        reason=action.reason,
+        requested_by=action.requested_by,
+        risk=decision.risk,
+        requires_approval=decision.requires_approval,
+        metadata={**action.metadata, "policy_reason": decision.reason},
+    )
+    if not action_request.requires_approval:
+        action_request = action_executor.execute(action_request)
+    action_store.add(action_request)
+    return action_request
 
 
 def main() -> None:

@@ -1,4 +1,4 @@
-from surveilfusion.core.models import AgentRecommendation, EventSeverity, SurveillanceEvent
+from surveilfusion.core.models import ActionCreate, ActionKind, AgentRecommendation, EventSeverity, SurveillanceEvent
 
 
 class IncidentAgent:
@@ -35,3 +35,29 @@ class IncidentAgent:
                 "Queue notification if enabled",
             ],
         )
+
+    def propose_actions(self, event: SurveillanceEvent) -> list[ActionCreate]:
+        actions = [
+            ActionCreate(
+                kind=ActionKind.notify,
+                camera_id=event.camera_id,
+                event_id=event.id,
+                reason=f"Notify configured contacts about {event.kind.value}.",
+            ),
+            ActionCreate(
+                kind=ActionKind.pin_live_view,
+                camera_id=event.camera_id,
+                event_id=event.id,
+                reason="Pin the relevant live camera while the incident is open.",
+            ),
+        ]
+        if event.severity in {EventSeverity.high, EventSeverity.critical}:
+            actions.append(
+                ActionCreate(
+                    kind=ActionKind.start_recording,
+                    camera_id=event.camera_id,
+                    event_id=event.id,
+                    reason="Preserve a review clip for this high-priority incident.",
+                )
+            )
+        return actions

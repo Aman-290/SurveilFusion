@@ -1,12 +1,24 @@
 from pathlib import Path
 
+from surveilfusion.actions.executor import ActionExecutor
+from surveilfusion.actions.policy import ActionPolicy
 from surveilfusion.agents.incident_agent import IncidentAgent
 from surveilfusion.camera.go2rtc import generate_frigate_camera_block, generate_go2rtc_config
-from surveilfusion.core.models import CameraConfig, Detection, DetectionKind, EventSeverity, SurveillanceEvent
+from surveilfusion.core.models import (
+    ActionCreate,
+    ActionKind,
+    ActionStatus,
+    CameraConfig,
+    Detection,
+    DetectionKind,
+    EventSeverity,
+    SurveillanceEvent,
+)
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.integrations.mqtt import event_to_mqtt
 from surveilfusion.memory.event_memory import EventMemory
 from surveilfusion.onboarding import export_integration_configs, initialize_project, run_doctor
+from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
 
 
@@ -38,12 +50,54 @@ def test_agent_and_memory_outputs() -> None:
     )
 
     recommendation = IncidentAgent().recommend(event)
+    proposed_actions = IncidentAgent().propose_actions(event)
     summary = EventMemory().summarize([event])
     mqtt_payload = event_to_mqtt(event)
 
     assert recommendation.priority == EventSeverity.medium
+    assert [action.kind for action in proposed_actions] == [ActionKind.notify, ActionKind.pin_live_view]
     assert summary["unacknowledged"] == 1
     assert mqtt_payload.topic == "surveilfusion/events/driveway/unknown_face"
+
+
+def test_action_policy_store_and_executor(tmp_path: Path) -> None:
+    store = ActionStore(tmp_path / "actions.db")
+    policy = ActionPolicy()
+    executor = ActionExecutor()
+
+    low_risk = ActionCreate(kind=ActionKind.notify, camera_id="front-door", reason="Alert owner.")
+    decision = policy.evaluate(low_risk)
+    low_risk_action = build_action_request(low_risk, decision.requires_approval, decision.risk)
+    action = executor.execute(low_risk_action)
+    store.add(action)
+
+    high_risk = ActionCreate(
+        kind=ActionKind.open_two_way_audio,
+        camera_id="front-door",
+        reason="Operator wants to speak through the camera.",
+    )
+    high_decision = policy.evaluate(high_risk)
+    high_action = build_action_request(high_risk, high_decision.requires_approval, high_decision.risk)
+    store.add(high_action)
+    approved = store.approve(high_action.id)
+
+    assert low_risk_action.requires_approval is False
+    assert action.status == ActionStatus.executed
+    assert high_decision.requires_approval is True
+    assert approved is not None
+    assert executor.execute(approved).status == ActionStatus.executed
+
+
+def build_action_request(action: ActionCreate, requires_approval: bool, risk):
+    from surveilfusion.core.models import ActionRequest
+
+    return ActionRequest(
+        kind=action.kind,
+        camera_id=action.camera_id,
+        reason=action.reason,
+        requires_approval=requires_approval,
+        risk=risk,
+    )
 
 
 def test_camera_integration_configs() -> None:
