@@ -21,6 +21,7 @@ from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.integrations.mqtt import event_to_mqtt
 from surveilfusion.memory.event_memory import EventMemory
 from surveilfusion.onboarding import export_integration_configs, initialize_project, run_doctor
+from surveilfusion.security import is_authorized, is_public_path
 from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
 
@@ -60,6 +61,15 @@ def test_detection_service_creates_events(tmp_path: Path) -> None:
     assert missing_run.status.value == "failed"
     assert frame_run.events[0].severity == EventSeverity.critical
     assert store.latest()[0].kind == DetectionKind.fire
+
+
+def test_api_key_security_helpers() -> None:
+    assert is_public_path("/")
+    assert is_public_path("/static/app.js")
+    assert not is_public_path("/api/actions")
+    assert is_authorized({"x-surveilfusion-key": "secret"}, "secret")
+    assert is_authorized({"authorization": "Bearer secret"}, "secret")
+    assert not is_authorized({"authorization": "Bearer wrong"}, "secret")
 
 
 def test_agent_and_memory_outputs() -> None:

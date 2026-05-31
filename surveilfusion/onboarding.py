@@ -39,9 +39,10 @@ def run_doctor(root: Path) -> dict[str, object]:
         "docker_compose": _command_ok(["docker", "compose", "version"]),
         "data_dir_writable": _can_write(root / "data"),
         "fire_model": (root / "models" / "fire-yolo.pt").exists(),
+        "api_key": _env_has_value(root / ".env", "SURVEILFUSION_API_KEY"),
     }
     return {
-        "ok": all(value for name, value in checks.items() if name != "fire_model"),
+        "ok": all(value for name, value in checks.items() if name not in {"fire_model", "api_key"}),
         "checks": checks,
         "next_steps": _next_steps(checks),
     }
@@ -87,6 +88,16 @@ def _command_ok(command: list[str]) -> bool:
         return False
 
 
+def _env_has_value(path: Path, key: str) -> bool:
+    if not path.exists():
+        return False
+    prefix = f"{key}="
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith(prefix):
+            return bool(line.removeprefix(prefix).strip())
+    return False
+
+
 def _next_steps(checks: dict[str, bool]) -> list[str]:
     steps: list[str] = []
     if not checks["env_file"]:
@@ -97,6 +108,8 @@ def _next_steps(checks: dict[str, bool]) -> list[str]:
         steps.append("Install Docker Desktop for the one-command local stack.")
     if not checks["fire_model"]:
         steps.append("Optional: add models/fire-yolo.pt or set FIRE_MODEL_PATH to enable image detection.")
+    if not checks["api_key"]:
+        steps.append("Set SURVEILFUSION_API_KEY before exposing APIs outside a trusted LAN.")
     if not steps:
         steps.append("Run `docker compose up --build` or `python -m surveilfusion`.")
     return steps

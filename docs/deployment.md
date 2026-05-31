@@ -38,7 +38,7 @@ surveilfusion serve
 
 ## Production Notes
 
-- Use a reverse proxy only after authentication is added.
+- Set `SURVEILFUSION_API_KEY` before exposing the app through VPN, tunnel, or reverse proxy.
 - Keep `ENABLE_NOTIFICATIONS=false` until credentials are configured.
 - Mount `data/`, `config/`, and `models/` as persistent volumes.
 - Store model weights outside Git and fetch them through scripts or releases.

@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import AnyHttpUrl, Field, SecretStr
+from pydantic import AliasChoices, AnyHttpUrl, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8080
     public_base_url: AnyHttpUrl | None = None
+    api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SURVEILFUSION_API_KEY", "API_KEY"),
+    )
     data_dir: Path = Path("data")
     cameras_file: Path = Path("config/cameras.example.yml")
     database_url: str = "sqlite+aiosqlite:///data/surveilfusion.db"

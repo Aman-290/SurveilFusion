@@ -24,6 +24,7 @@ from surveilfusion.detectors.factory import build_detectors
 from surveilfusion.detectors.service import DetectionService
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.memory.event_memory import EventMemory
+from surveilfusion.security import ApiKeyMiddleware, require_websocket_key
 from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
 
@@ -41,6 +42,11 @@ app = FastAPI(
     title="SurveilFusion",
     version="0.2.0",
     description="Local-first AI surveillance, CCTV integration, incident memory, and agentic automation.",
+)
+
+app.add_middleware(
+    ApiKeyMiddleware,
+    api_key=settings.api_key.get_secret_value() if settings.api_key else None,
 )
 
 static_dir = Path("web/static")
@@ -213,6 +219,11 @@ async def similar_events(event_id: str, limit: int = 5) -> list[dict]:
 
 @app.websocket("/ws/events")
 async def events_socket(websocket: WebSocket) -> None:
+    if not await require_websocket_key(
+        websocket,
+        settings.api_key.get_secret_value() if settings.api_key else None,
+    ):
+        return
     await websocket.accept()
     try:
         await websocket.send_json({"type": "hello", "message": "SurveilFusion event stream connected"})

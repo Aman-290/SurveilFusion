@@ -80,6 +80,12 @@ cameras:
 
 Never commit real camera URLs, passwords, bot tokens, face images, or incident clips.
 
+For remote access, set `SURVEILFUSION_API_KEY` in `.env` and send it with API calls:
+
+```bash
+curl -H "X-SurveilFusion-Key: your-key" http://localhost:8080/api/events
+```
+
 More examples:
 
 - [Camera onboarding](docs/camera-onboarding.md)
@@ -113,6 +119,8 @@ More examples:
 - `GET /api/events/{id}/similar` - find similar incidents for an event
 
 FastAPI also exposes OpenAPI docs at `http://localhost:8080/docs`.
+
+When `SURVEILFUSION_API_KEY` is set, `/api/*` and `/ws/*` require either `X-SurveilFusion-Key` or `Authorization: Bearer <key>`.
 
 ## Architecture
 

@@ -42,6 +42,7 @@ Current API surface:
 ## Guardrails
 
 - Deny public unauthenticated remote control.
+- Set `SURVEILFUSION_API_KEY` for any deployment where remote actions are reachable beyond a trusted LAN.
 - Rate limit repeated actions.
 - Log every action and policy decision.
 - Prefer local deterministic rules for emergency escalation.
