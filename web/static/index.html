@@ -37,6 +37,10 @@
           <span id="action-count">0</span>
           <p>Actions</p>
         </article>
+        <article>
+          <span id="notification-count">0</span>
+          <p>Alerts</p>
+        </article>
       </section>
 
       <section class="layout">
@@ -74,6 +78,14 @@
             <button type="submit">Search</button>
           </form>
           <div id="memory-results" class="timeline"></div>
+        </div>
+
+        <div class="panel wide">
+          <div class="panel-head">
+            <h2>Notification Outbox</h2>
+            <small>Auditable alert delivery</small>
+          </div>
+          <div id="notifications" class="timeline"></div>
         </div>
       </section>
     </main>

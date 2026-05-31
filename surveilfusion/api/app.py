@@ -24,9 +24,12 @@ from surveilfusion.detectors.factory import build_detectors
 from surveilfusion.detectors.service import DetectionService
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.memory.event_memory import EventMemory
+from surveilfusion.notifications.builder import NotificationBuilder
+from surveilfusion.notifications.dispatcher import NotificationDispatcher
 from surveilfusion.security import ApiKeyMiddleware, require_websocket_key
 from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
+from surveilfusion.storage.notifications import NotificationStore
 
 settings = get_settings()
 registry = CameraRegistry(settings.cameras_file)
@@ -37,6 +40,9 @@ action_store = ActionStore(settings.data_dir / "surveilfusion.db")
 action_policy = ActionPolicy()
 action_executor = ActionExecutor()
 detection_service = DetectionService(build_detectors(settings), store)
+notification_store = NotificationStore(settings.data_dir / "surveilfusion.db")
+notification_builder = NotificationBuilder()
+notification_dispatcher = NotificationDispatcher(settings)
 
 app = FastAPI(
     title="SurveilFusion",
@@ -125,7 +131,7 @@ async def create_demo_event(camera_id: str = "front-door", kind: DetectionKind =
         summary="Synthetic event generated to verify the API, dashboard, memory, and agent pipeline.",
         detections=[Detection(kind=kind, label=kind.value, confidence=0.91)],
     )
-    store.add(event)
+    _record_event(event)
     return event.model_dump(mode="json")
 
 
@@ -157,6 +163,29 @@ async def acknowledge(event_id: str) -> dict[str, bool]:
 @app.get("/api/actions")
 async def actions(limit: int = 50) -> list[dict]:
     return [action.model_dump(mode="json") for action in action_store.latest(limit=limit)]
+
+
+@app.get("/api/notifications")
+async def notifications(limit: int = 50) -> list[dict]:
+    return [notification.model_dump(mode="json") for notification in notification_store.latest(limit=limit)]
+
+
+@app.post("/api/events/{event_id}/notifications/queue")
+async def queue_event_notifications(event_id: str) -> list[dict]:
+    for event in store.latest(limit=250):
+        if event.id == event_id:
+            return [notification.model_dump(mode="json") for notification in _queue_notifications(event)]
+    raise HTTPException(status_code=404, detail="Event not found")
+
+
+@app.post("/api/notifications/{notification_id}/dispatch")
+async def dispatch_notification(notification_id: str) -> dict:
+    notification = notification_store.get(notification_id)
+    if notification is None:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    notification = await notification_dispatcher.dispatch(notification)
+    notification_store.add(notification)
+    return notification.model_dump(mode="json")
 
 
 @app.post("/api/actions")
@@ -251,6 +280,18 @@ def _create_action(action: ActionCreate) -> ActionRequest:
         action_request = action_executor.execute(action_request)
     action_store.add(action_request)
     return action_request
+
+
+def _record_event(event: SurveillanceEvent) -> None:
+    store.add(event)
+    _queue_notifications(event)
+
+
+def _queue_notifications(event: SurveillanceEvent):
+    notifications = notification_builder.for_event(event)
+    for notification in notifications:
+        notification_store.add(notification)
+    return notifications
 
 
 def main() -> None:

@@ -159,3 +159,32 @@ class DetectionRun(BaseModel):
     detections: list[Detection] = Field(default_factory=list)
     events: list[SurveillanceEvent] = Field(default_factory=list)
     message: str
+
+
+class NotificationChannel(str, Enum):
+    outbox = "outbox"
+    webhook = "webhook"
+    telegram = "telegram"
+    mqtt = "mqtt"
+
+
+class NotificationStatus(str, Enum):
+    queued = "queued"
+    sent = "sent"
+    failed = "failed"
+    skipped = "skipped"
+
+
+class NotificationMessage(BaseModel):
+    id: str = Field(default_factory=lambda: uuid4().hex)
+    event_id: str
+    camera_id: str
+    channel: NotificationChannel
+    status: NotificationStatus = NotificationStatus.queued
+    title: str
+    body: str
+    target: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    sent_at: datetime | None = None
+    error: str | None = None
+    payload: dict[str, Any] = Field(default_factory=dict)

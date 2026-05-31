@@ -1,11 +1,13 @@
 const camerasEl = document.querySelector("#cameras");
 const eventsEl = document.querySelector("#events");
 const actionsEl = document.querySelector("#actions");
+const notificationsEl = document.querySelector("#notifications");
 const memoryResultsEl = document.querySelector("#memory-results");
 const cameraCountEl = document.querySelector("#camera-count");
 const eventCountEl = document.querySelector("#event-count");
 const openCountEl = document.querySelector("#open-count");
 const actionCountEl = document.querySelector("#action-count");
+const notificationCountEl = document.querySelector("#notification-count");
 const demoButton = document.querySelector("#demo-event");
 const memoryForm = document.querySelector("#memory-form");
 const memoryQuery = document.querySelector("#memory-query");
@@ -67,6 +69,22 @@ function renderActions(actions) {
   `).join("") || "<p class=\"meta\">No actions queued.</p>";
 }
 
+function renderNotifications(notifications) {
+  notificationCountEl.textContent = notifications.length;
+  notificationsEl.innerHTML = notifications.map((notification) => `
+    <article class="event">
+      <strong>${notification.title}</strong>
+      <p>${notification.body}</p>
+      <div class="meta">
+        <span class="pill">${notification.channel}</span>
+        <span class="pill">${notification.status}</span>
+        <span class="pill">${notification.camera_id}</span>
+      </div>
+      <button class="inline-action" data-dispatch="${notification.id}" type="button">Dispatch</button>
+    </article>
+  `).join("") || "<p class=\"meta\">No alerts queued.</p>";
+}
+
 function renderMemoryResults(results) {
   memoryResultsEl.innerHTML = results.map((result) => `
     <article class="event">
@@ -82,14 +100,16 @@ function renderMemoryResults(results) {
 }
 
 async function refresh() {
-  const [cameras, events, actions] = await Promise.all([
+  const [cameras, events, actions, notifications] = await Promise.all([
     fetchJson("/api/cameras"),
     fetchJson("/api/events"),
     fetchJson("/api/actions"),
+    fetchJson("/api/notifications"),
   ]);
   renderCameras(cameras);
   renderEvents(events);
   renderActions(actions);
+  renderNotifications(notifications);
 }
 
 demoButton.addEventListener("click", async () => {
@@ -115,11 +135,13 @@ document.addEventListener("click", async (event) => {
   const proposeId = target.dataset.propose;
   const approveId = target.dataset.approve;
   const executeId = target.dataset.execute;
+  const dispatchId = target.dataset.dispatch;
 
   if (proposeId) await fetchJson(`/api/events/${proposeId}/actions/propose`, { method: "POST" });
   if (approveId) await fetchJson(`/api/actions/${approveId}/approve`, { method: "POST" });
   if (executeId) await fetchJson(`/api/actions/${executeId}/execute`, { method: "POST" });
-  if (proposeId || approveId || executeId) await refresh();
+  if (dispatchId) await fetchJson(`/api/notifications/${dispatchId}/dispatch`, { method: "POST" });
+  if (proposeId || approveId || executeId || dispatchId) await refresh();
 });
 
 refresh().catch((error) => {

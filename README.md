@@ -94,6 +94,7 @@ More examples:
 - [Agent and remote control safety](docs/agent-safety.md)
 - [Detection runtime](docs/detection-runtime.md)
 - [Incident memory](docs/memory.md)
+- [Notifications](docs/notifications.md)
 
 ## API
 
@@ -114,6 +115,9 @@ More examples:
 - `POST /api/actions` - request a remote action
 - `POST /api/actions/{id}/approve` - approve an action
 - `POST /api/actions/{id}/execute` - execute an approved or low-risk action
+- `GET /api/notifications` - local alert outbox
+- `POST /api/events/{id}/notifications/queue` - queue notifications for an event
+- `POST /api/notifications/{id}/dispatch` - dispatch or mark notification through a channel
 - `GET /api/memory/summary` - local incident memory summary
 - `GET /api/memory/search?q=fire%20front%20door` - local searchable incident memory
 - `GET /api/events/{id}/similar` - find similar incidents for an event

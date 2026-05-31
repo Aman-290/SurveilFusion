@@ -8,6 +8,7 @@ from surveilfusion.detectors.factory import build_detectors
 from surveilfusion.detectors.service import DetectionService
 from surveilfusion.onboarding import export_integration_configs, initialize_project, run_doctor
 from surveilfusion.storage.events import EventStore
+from surveilfusion.storage.notifications import NotificationStore
 
 
 def main() -> int:
@@ -31,6 +32,10 @@ def main() -> int:
     detect_parser.add_argument("image_path")
     detect_parser.add_argument("--camera-id", default="manual")
     detect_parser.add_argument("--json", action="store_true")
+
+    notifications_parser = subparsers.add_parser("notifications", help="List local notification outbox entries.")
+    notifications_parser.add_argument("--limit", type=int, default=20)
+    notifications_parser.add_argument("--json", action="store_true")
 
     subparsers.add_parser("serve", help="Run the SurveilFusion API and dashboard.")
 
@@ -82,6 +87,18 @@ def main() -> int:
             for event in run.events:
                 print(f"  - {event.title} ({event.severity.value})")
         return 0 if run.status.value != "failed" else 1
+
+    if args.command == "notifications":
+        settings = get_settings()
+        store = NotificationStore(settings.data_dir / "surveilfusion.db")
+        notifications = store.latest(limit=args.limit)
+        if args.json:
+            print(json.dumps([notification.model_dump(mode="json") for notification in notifications], indent=2))
+        else:
+            print("Notification outbox")
+            for notification in notifications:
+                print(f"  - {notification.status.value} {notification.channel.value}: {notification.title}")
+        return 0
 
     if args.command in {None, "serve"}:
         serve_main()

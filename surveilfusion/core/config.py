@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     mqtt_url: str | None = "mqtt://mqtt:1883"
     telegram_bot_token: SecretStr | None = None
     telegram_chat_id: str | None = None
+    notification_webhooks: str = ""
     enable_notifications: bool = False
 
     fire_model_path: Path = Path("models/fire-yolo.pt")

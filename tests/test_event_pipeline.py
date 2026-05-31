@@ -20,10 +20,13 @@ from surveilfusion.detectors.service import DetectionService
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.integrations.mqtt import event_to_mqtt
 from surveilfusion.memory.event_memory import EventMemory
+from surveilfusion.notifications.builder import NotificationBuilder
+from surveilfusion.notifications.dispatcher import NotificationDispatcher
 from surveilfusion.onboarding import export_integration_configs, initialize_project, run_doctor
 from surveilfusion.security import is_authorized, is_public_path
 from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
+from surveilfusion.storage.notifications import NotificationStore
 
 
 class FakeFireDetector:
@@ -90,6 +93,26 @@ def test_agent_and_memory_outputs() -> None:
     assert [action.kind for action in proposed_actions] == [ActionKind.notify, ActionKind.pin_live_view]
     assert summary["unacknowledged"] == 1
     assert mqtt_payload.topic == "surveilfusion/events/driveway/unknown_face"
+
+
+def test_notification_outbox_and_dispatch(tmp_path: Path) -> None:
+    from surveilfusion.core.config import Settings
+
+    event = SurveillanceEvent(
+        camera_id="front-door",
+        kind=DetectionKind.fire,
+        severity=EventSeverity.critical,
+        title="Fire detected",
+        summary="Fire near front door.",
+    )
+    notification = NotificationBuilder().for_event(event)[0]
+    store = NotificationStore(tmp_path / "notifications.db")
+    store.add(notification)
+    dispatched = asyncio.run(NotificationDispatcher(Settings(data_dir=tmp_path)).dispatch(notification))
+
+    assert store.latest()[0].event_id == event.id
+    assert notification.title.startswith("CRITICAL")
+    assert dispatched.status.value == "skipped"
 
 
 def test_memory_search_and_similarity() -> None:
