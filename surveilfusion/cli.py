@@ -3,7 +3,11 @@ import json
 from pathlib import Path
 
 from surveilfusion.api.app import main as serve_main
+from surveilfusion.core.config import get_settings
+from surveilfusion.detectors.factory import build_detectors
+from surveilfusion.detectors.service import DetectionService
 from surveilfusion.onboarding import export_integration_configs, initialize_project, run_doctor
+from surveilfusion.storage.events import EventStore
 
 
 def main() -> int:
@@ -22,6 +26,11 @@ def main() -> int:
     )
     export_parser.add_argument("--cameras-file", default="config/cameras.yml")
     export_parser.add_argument("--output-dir", default="generated")
+
+    detect_parser = subparsers.add_parser("detect-image", help="Run configured detectors on an image file.")
+    detect_parser.add_argument("image_path")
+    detect_parser.add_argument("--camera-id", default="manual")
+    detect_parser.add_argument("--json", action="store_true")
 
     subparsers.add_parser("serve", help="Run the SurveilFusion API and dashboard.")
 
@@ -60,6 +69,19 @@ def main() -> int:
         for path in paths:
             print(f"  - {path}")
         return 0
+
+    if args.command == "detect-image":
+        settings = get_settings()
+        event_store = EventStore(settings.data_dir / "surveilfusion.db")
+        service = DetectionService(build_detectors(settings), event_store)
+        run = service.run_on_image_path_sync(Path(args.image_path), camera_id=args.camera_id)
+        if args.json:
+            print(run.model_dump_json(indent=2))
+        else:
+            print(f"{run.status.value}: {run.message}")
+            for event in run.events:
+                print(f"  - {event.title} ({event.severity.value})")
+        return 0 if run.status.value != "failed" else 1
 
     if args.command in {None, "serve"}:
         serve_main()

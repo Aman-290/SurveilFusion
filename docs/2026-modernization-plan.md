@@ -69,6 +69,7 @@ SurveilFusion should become a local-first AI CCTV command center that upgrades e
 - Searchable local incident memory with recency and severity ranking.
 - Deterministic incident agent fallback.
 - Policy-gated remote action center with approval and execution APIs.
+- Detector orchestration service that creates persisted events from image/frame inference.
 - MQTT payload conversion.
 - Docker Compose stack with SurveilFusion, MQTT, Qdrant, and Ollama.
 - Responsive dashboard and demo event flow.

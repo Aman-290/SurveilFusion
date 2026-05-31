@@ -38,9 +38,10 @@ def run_doctor(root: Path) -> dict[str, object]:
         "docker": _command_ok(["docker", "--version"]),
         "docker_compose": _command_ok(["docker", "compose", "version"]),
         "data_dir_writable": _can_write(root / "data"),
+        "fire_model": (root / "models" / "fire-yolo.pt").exists(),
     }
     return {
-        "ok": all(checks.values()),
+        "ok": all(value for name, value in checks.items() if name != "fire_model"),
         "checks": checks,
         "next_steps": _next_steps(checks),
     }
@@ -94,6 +95,8 @@ def _next_steps(checks: dict[str, bool]) -> list[str]:
         steps.append("Create config/cameras.yml with your RTSP or ONVIF camera sources.")
     if not checks["docker"]:
         steps.append("Install Docker Desktop for the one-command local stack.")
+    if not checks["fire_model"]:
+        steps.append("Optional: add models/fire-yolo.pt or set FIRE_MODEL_PATH to enable image detection.")
     if not steps:
         steps.append("Run `docker compose up --build` or `python -m surveilfusion`.")
     return steps

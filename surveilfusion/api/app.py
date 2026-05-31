@@ -20,6 +20,8 @@ from surveilfusion.core.models import (
     EventSeverity,
     SurveillanceEvent,
 )
+from surveilfusion.detectors.factory import build_detectors
+from surveilfusion.detectors.service import DetectionService
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.memory.event_memory import EventMemory
 from surveilfusion.storage.actions import ActionStore
@@ -33,6 +35,7 @@ memory = EventMemory()
 action_store = ActionStore(settings.data_dir / "surveilfusion.db")
 action_policy = ActionPolicy()
 action_executor = ActionExecutor()
+detection_service = DetectionService(build_detectors(settings), store)
 
 app = FastAPI(
     title="SurveilFusion",
@@ -89,6 +92,21 @@ async def home_assistant_discovery() -> list[dict[str, object]]:
 @app.get("/api/events")
 async def events(limit: int = 50) -> list[dict]:
     return [event.model_dump(mode="json") for event in store.latest(limit=limit)]
+
+
+@app.post("/api/detect/image")
+async def detect_image(image_path: str, camera_id: str = "manual") -> dict:
+    run = await detection_service.run_on_image_path(Path(image_path), camera_id=camera_id)
+    return run.model_dump(mode="json")
+
+
+@app.get("/api/detect/status")
+async def detect_status() -> dict:
+    return {
+        "configured_detectors": [detector.name for detector in detection_service.detectors],
+        "fire_model_path": str(settings.fire_model_path),
+        "ready": bool(detection_service.detectors),
+    }
 
 
 @app.post("/api/events/demo")

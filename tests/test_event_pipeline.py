@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -15,12 +16,20 @@ from surveilfusion.core.models import (
     EventSeverity,
     SurveillanceEvent,
 )
+from surveilfusion.detectors.service import DetectionService
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.integrations.mqtt import event_to_mqtt
 from surveilfusion.memory.event_memory import EventMemory
 from surveilfusion.onboarding import export_integration_configs, initialize_project, run_doctor
 from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
+
+
+class FakeFireDetector:
+    name = "fake-fire"
+
+    async def detect(self, frame, *, camera_id: str):
+        return [Detection(kind=DetectionKind.fire, label="fire", confidence=0.94)]
 
 
 def test_event_store_round_trip(tmp_path: Path) -> None:
@@ -39,6 +48,18 @@ def test_event_store_round_trip(tmp_path: Path) -> None:
 
     assert latest[0].id == event.id
     assert latest[0].detections[0].label == "fire"
+
+
+def test_detection_service_creates_events(tmp_path: Path) -> None:
+    store = EventStore(tmp_path / "events.db")
+    service = DetectionService([FakeFireDetector()], store)
+
+    missing_run = service.run_on_image_path_sync(tmp_path / "missing.jpg", camera_id="front-door")
+    frame_run = asyncio.run(service.run_on_frame(object(), camera_id="front-door", source="unit-test"))
+
+    assert missing_run.status.value == "failed"
+    assert frame_run.events[0].severity == EventSeverity.critical
+    assert store.latest()[0].kind == DetectionKind.fire
 
 
 def test_agent_and_memory_outputs() -> None:

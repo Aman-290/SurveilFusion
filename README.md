@@ -57,6 +57,12 @@ surveilfusion export-integrations
 
 This writes `generated/go2rtc.yml`, `generated/frigate.cameras.yml`, and `generated/home-assistant-mqtt-discovery.json`.
 
+Run detectors on a snapshot:
+
+```bash
+surveilfusion detect-image path\to\snapshot.jpg --camera-id front-door --json
+```
+
 ## Configuration
 
 Edit `config/cameras.example.yml` or set `CAMERAS_FILE` in `.env`.
@@ -80,6 +86,8 @@ More examples:
 - [Deployment guide](docs/deployment.md)
 - [Hardware benchmarks](docs/hardware-benchmarks.md)
 - [Agent and remote control safety](docs/agent-safety.md)
+- [Detection runtime](docs/detection-runtime.md)
+- [Incident memory](docs/memory.md)
 
 ## API
 
@@ -90,6 +98,8 @@ More examples:
 - `GET /api/integrations/frigate` - generated Frigate camera block
 - `GET /api/integrations/home-assistant/mqtt-discovery` - MQTT discovery messages
 - `GET /api/events` - latest events
+- `GET /api/detect/status` - configured detector readiness
+- `POST /api/detect/image` - run detectors on a server-side image path
 - `POST /api/events/demo` - create a synthetic event for setup testing
 - `GET /api/events/{id}/recommendation` - incident agent recommendation
 - `POST /api/events/{id}/actions/propose` - create policy-scored action proposals for an event

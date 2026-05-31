@@ -144,3 +144,18 @@ class MemorySearchResult(BaseModel):
     score: float
     matched_terms: list[str] = Field(default_factory=list)
     rationale: str
+
+
+class DetectionRunStatus(str, Enum):
+    completed = "completed"
+    skipped = "skipped"
+    failed = "failed"
+
+
+class DetectionRun(BaseModel):
+    camera_id: str
+    source: str
+    status: DetectionRunStatus
+    detections: list[Detection] = Field(default_factory=list)
+    events: list[SurveillanceEvent] = Field(default_factory=list)
+    message: str
