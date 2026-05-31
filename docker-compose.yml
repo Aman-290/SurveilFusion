@@ -1,0 +1,43 @@
+services:
+  surveilfusion:
+    build: .
+    container_name: surveilfusion
+    env_file: .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - mqtt
+      - qdrant
+      - ollama
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: surveilfusion-mqtt
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: surveilfusion-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: surveilfusion-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  qdrant_data:
+  ollama_data:

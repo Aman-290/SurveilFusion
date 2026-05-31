@@ -1,0 +1,165 @@
+:root {
+  color-scheme: dark;
+  --bg: #111716;
+  --panel: #18211f;
+  --panel-2: #202c29;
+  --text: #eff6f2;
+  --muted: #a5b7b0;
+  --line: #31423d;
+  --accent: #35d39a;
+  --alert: #ff695f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 0 24px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--accent);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(34px, 6vw, 68px);
+  line-height: 0.95;
+}
+
+button {
+  min-height: 42px;
+  border: 1px solid #55e4b0;
+  border-radius: 8px;
+  padding: 0 16px;
+  background: #19362d;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.metrics article,
+.panel,
+.camera-card,
+.event {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+}
+
+.metrics article {
+  padding: 18px;
+}
+
+.metrics span {
+  display: block;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.metrics p,
+small {
+  color: var(--muted);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 14px;
+}
+
+.panel {
+  min-height: 460px;
+  padding: 16px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.camera-grid,
+.timeline {
+  display: grid;
+  gap: 10px;
+}
+
+.camera-card,
+.event {
+  padding: 14px;
+  background: var(--panel-2);
+}
+
+.camera-card strong,
+.event strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pill {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.critical {
+  color: var(--alert);
+}
+
+@media (max-width: 800px) {
+  .topbar,
+  .panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .metrics,
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

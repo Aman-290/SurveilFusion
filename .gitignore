@@ -104,6 +104,9 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.server.pid
+data/
+models/
 env/
 venv/
 ENV/

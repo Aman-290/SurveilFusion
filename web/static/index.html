@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="SurveilFusion is a local-first AI surveillance platform for existing CCTV, RTSP and ONVIF cameras, agentic incident triage, smart-home automation, and private edge AI."
+    >
+    <title>SurveilFusion | Local AI CCTV Command Center</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">Local-first AI surveillance</p>
+          <h1>SurveilFusion</h1>
+        </div>
+        <button id="demo-event" type="button">Create demo event</button>
+      </section>
+
+      <section class="metrics" aria-label="System metrics">
+        <article>
+          <span id="camera-count">0</span>
+          <p>Cameras</p>
+        </article>
+        <article>
+          <span id="event-count">0</span>
+          <p>Events</p>
+        </article>
+        <article>
+          <span id="open-count">0</span>
+          <p>Open alerts</p>
+        </article>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Cameras</h2>
+            <small>RTSP, ONVIF, USB, go2rtc-ready</small>
+          </div>
+          <div id="cameras" class="camera-grid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Incident Timeline</h2>
+            <small>Agent-ready event memory</small>
+          </div>
+          <div id="events" class="timeline"></div>
+        </div>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

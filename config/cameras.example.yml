@@ -1,0 +1,19 @@
+cameras:
+  - id: front-door
+    name: Front Door
+    source: rtsp://user:password@192.168.1.20:554/stream1
+    zone: entrance
+    tags: [outdoor, entry]
+    detect_fps: 5
+    record: true
+    ptz: false
+    audio: true
+  - id: driveway
+    name: Driveway
+    source: rtsp://user:password@192.168.1.21:554/stream1
+    zone: perimeter
+    tags: [outdoor, vehicle]
+    detect_fps: 3
+    record: true
+    ptz: true
+    audio: false
