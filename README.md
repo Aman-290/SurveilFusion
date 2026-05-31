@@ -95,6 +95,8 @@ More examples:
 - [Detection runtime](docs/detection-runtime.md)
 - [Incident memory](docs/memory.md)
 - [Notifications](docs/notifications.md)
+- [Face identity and audio detection](docs/identity-and-audio.md)
+- [2026 research notes](docs/research-2026.md)
 
 ## API
 
@@ -107,6 +109,10 @@ More examples:
 - `GET /api/events` - latest events
 - `GET /api/detect/status` - configured detector readiness
 - `POST /api/detect/image` - run detectors on a server-side image path
+- `POST /api/audio/analyze` - analyze a WAV file for loud audio anomalies
+- `GET /api/identity/people` - enrolled local identities
+- `POST /api/identity/enroll` - enroll a face embedding
+- `POST /api/identity/identify` - match a face embedding or create an unknown-face event
 - `POST /api/events/demo` - create a synthetic event for setup testing
 - `GET /api/events/{id}/recommendation` - incident agent recommendation
 - `POST /api/events/{id}/actions/propose` - create policy-scored action proposals for an event

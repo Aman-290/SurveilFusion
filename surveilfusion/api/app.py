@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from surveilfusion.actions.executor import ActionExecutor
 from surveilfusion.actions.policy import ActionPolicy
 from surveilfusion.agents.incident_agent import IncidentAgent
+from surveilfusion.audio.analyzer import AudioAnalyzer
 from surveilfusion.camera.go2rtc import generate_frigate_camera_block, generate_go2rtc_config
 from surveilfusion.camera.probe import probe_camera
 from surveilfusion.camera.registry import CameraRegistry
@@ -18,10 +19,13 @@ from surveilfusion.core.models import (
     Detection,
     DetectionKind,
     EventSeverity,
+    FaceEnrollment,
+    FaceIdentificationRequest,
     SurveillanceEvent,
 )
 from surveilfusion.detectors.factory import build_detectors
 from surveilfusion.detectors.service import DetectionService
+from surveilfusion.identity.service import FaceIdentityService
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.memory.event_memory import EventMemory
 from surveilfusion.notifications.builder import NotificationBuilder
@@ -29,6 +33,7 @@ from surveilfusion.notifications.dispatcher import NotificationDispatcher
 from surveilfusion.security import ApiKeyMiddleware, require_websocket_key
 from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
+from surveilfusion.storage.identity import IdentityStore
 from surveilfusion.storage.notifications import NotificationStore
 
 settings = get_settings()
@@ -40,9 +45,12 @@ action_store = ActionStore(settings.data_dir / "surveilfusion.db")
 action_policy = ActionPolicy()
 action_executor = ActionExecutor()
 detection_service = DetectionService(build_detectors(settings), store)
+audio_analyzer = AudioAnalyzer(store)
 notification_store = NotificationStore(settings.data_dir / "surveilfusion.db")
 notification_builder = NotificationBuilder()
 notification_dispatcher = NotificationDispatcher(settings)
+identity_store = IdentityStore(settings.data_dir / "surveilfusion.db")
+identity_service = FaceIdentityService(identity_store, store)
 
 app = FastAPI(
     title="SurveilFusion",
@@ -119,6 +127,27 @@ async def detect_status() -> dict:
         "fire_model_path": str(settings.fire_model_path),
         "ready": bool(detection_service.detectors),
     }
+
+
+@app.post("/api/audio/analyze")
+async def analyze_audio(audio_path: str, camera_id: str = "manual") -> dict:
+    run = audio_analyzer.analyze_wav(Path(audio_path), camera_id=camera_id)
+    return run.model_dump(mode="json")
+
+
+@app.get("/api/identity/people")
+async def identities(limit: int = 100) -> list[dict]:
+    return [identity.model_dump(mode="json") for identity in identity_store.latest(limit=limit)]
+
+
+@app.post("/api/identity/enroll")
+async def enroll_identity(enrollment: FaceEnrollment) -> dict:
+    return identity_service.enroll(enrollment).model_dump(mode="json")
+
+
+@app.post("/api/identity/identify")
+async def identify_face(request: FaceIdentificationRequest) -> dict:
+    return identity_service.identify(request).model_dump(mode="json")
 
 
 @app.post("/api/events/demo")

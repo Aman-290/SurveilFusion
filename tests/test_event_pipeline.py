@@ -1,10 +1,13 @@
 import asyncio
+import struct
+import wave
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from surveilfusion.actions.executor import ActionExecutor
 from surveilfusion.actions.policy import ActionPolicy
 from surveilfusion.agents.incident_agent import IncidentAgent
+from surveilfusion.audio.analyzer import AudioAnalyzer
 from surveilfusion.camera.go2rtc import generate_frigate_camera_block, generate_go2rtc_config
 from surveilfusion.core.models import (
     ActionCreate,
@@ -14,9 +17,12 @@ from surveilfusion.core.models import (
     Detection,
     DetectionKind,
     EventSeverity,
+    FaceEnrollment,
+    FaceIdentificationRequest,
     SurveillanceEvent,
 )
 from surveilfusion.detectors.service import DetectionService
+from surveilfusion.identity.service import FaceIdentityService
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.integrations.mqtt import event_to_mqtt
 from surveilfusion.memory.event_memory import EventMemory
@@ -26,6 +32,7 @@ from surveilfusion.onboarding import export_integration_configs, initialize_proj
 from surveilfusion.security import is_authorized, is_public_path
 from surveilfusion.storage.actions import ActionStore
 from surveilfusion.storage.events import EventStore
+from surveilfusion.storage.identity import IdentityStore
 from surveilfusion.storage.notifications import NotificationStore
 
 
@@ -115,6 +122,34 @@ def test_notification_outbox_and_dispatch(tmp_path: Path) -> None:
     assert dispatched.status.value == "skipped"
 
 
+def test_face_identity_enroll_match_and_unknown_event(tmp_path: Path) -> None:
+    event_store = EventStore(tmp_path / "identity.db")
+    service = FaceIdentityService(IdentityStore(tmp_path / "identity.db"), event_store)
+
+    identity = service.enroll(FaceEnrollment(name="Aman", embedding=[1, 0, 0]))
+    match = service.identify(FaceIdentificationRequest(camera_id="front-door", embedding=[0.99, 0.01, 0]))
+    unknown = service.identify(FaceIdentificationRequest(camera_id="front-door", embedding=[0, 1, 0]))
+
+    assert identity.name == "Aman"
+    assert match.matched is True
+    assert match.identity is not None
+    assert unknown.matched is False
+    assert unknown.event is not None
+    assert event_store.latest()[0].kind == DetectionKind.unknown_face
+
+
+def test_audio_analyzer_creates_distress_event(tmp_path: Path) -> None:
+    audio_path = tmp_path / "loud.wav"
+    write_test_wav(audio_path, amplitude=24000)
+    store = EventStore(tmp_path / "audio.db")
+    run = AudioAnalyzer(store, distress_dbfs_threshold=-20).analyze_wav(audio_path, camera_id="front-door")
+
+    assert run.status.value == "completed"
+    assert run.rms_dbfs is not None
+    assert run.events[0].kind == DetectionKind.distress_audio
+    assert store.latest()[0].kind == DetectionKind.distress_audio
+
+
 def test_memory_search_and_similarity() -> None:
     memory = EventMemory()
     fire_event = SurveillanceEvent(
@@ -187,6 +222,15 @@ def build_action_request(action: ActionCreate, requires_approval: bool, risk):
         requires_approval=requires_approval,
         risk=risk,
     )
+
+
+def write_test_wav(path: Path, amplitude: int) -> None:
+    samples = [amplitude if index % 2 == 0 else -amplitude for index in range(16000)]
+    with wave.open(str(path), "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(16000)
+        wav_file.writeframes(b"".join(struct.pack("<h", sample) for sample in samples))
 
 
 def test_camera_integration_configs() -> None:

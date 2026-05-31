@@ -188,3 +188,48 @@ class NotificationMessage(BaseModel):
     sent_at: datetime | None = None
     error: str | None = None
     payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class FaceIdentity(BaseModel):
+    id: str = Field(default_factory=lambda: uuid4().hex)
+    name: str
+    embedding: list[float]
+    source: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class FaceEnrollment(BaseModel):
+    name: str
+    embedding: list[float]
+    source: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class FaceIdentificationRequest(BaseModel):
+    camera_id: str
+    embedding: list[float]
+    threshold: float = Field(default=0.62, ge=0.0, le=1.0)
+    source: str | None = None
+
+
+class FaceIdentificationResult(BaseModel):
+    camera_id: str
+    matched: bool
+    identity: FaceIdentity | None = None
+    score: float
+    threshold: float
+    event: SurveillanceEvent | None = None
+
+
+class AudioAnalysisRun(BaseModel):
+    camera_id: str
+    source: str
+    status: DetectionRunStatus
+    duration_seconds: float = 0
+    rms_dbfs: float | None = None
+    peak: float | None = None
+    zero_crossing_rate: float | None = None
+    detections: list[Detection] = Field(default_factory=list)
+    events: list[SurveillanceEvent] = Field(default_factory=list)
+    message: str
