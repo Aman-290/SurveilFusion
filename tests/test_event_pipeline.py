@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from surveilfusion.agents.incident_agent import IncidentAgent
-from surveilfusion.core.models import Detection, DetectionKind, EventSeverity, SurveillanceEvent
+from surveilfusion.camera.go2rtc import generate_frigate_camera_block, generate_go2rtc_config
+from surveilfusion.core.models import CameraConfig, Detection, DetectionKind, EventSeverity, SurveillanceEvent
+from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.integrations.mqtt import event_to_mqtt
 from surveilfusion.memory.event_memory import EventMemory
 from surveilfusion.storage.events import EventStore
@@ -41,3 +43,22 @@ def test_agent_and_memory_outputs() -> None:
     assert recommendation.priority == EventSeverity.medium
     assert summary["unacknowledged"] == 1
     assert mqtt_payload.topic == "surveilfusion/events/driveway/unknown_face"
+
+
+def test_camera_integration_configs() -> None:
+    camera = CameraConfig(
+        id="front-door",
+        name="Front Door",
+        source="rtsp://user:pass@camera/stream1#backchannel=0",
+        audio=True,
+        record=True,
+    )
+
+    go2rtc = generate_go2rtc_config([camera])
+    frigate = generate_frigate_camera_block([camera])
+    discovery = discovery_messages([camera])
+
+    assert go2rtc["streams"]["front-door"][0].startswith("rtsp://")
+    assert "front-door_twoway" in go2rtc["streams"]
+    assert frigate["front-door"]["record"]["enabled"] is True
+    assert discovery[0]["topic"] == "homeassistant/binary_sensor/surveilfusion/front-door/config"

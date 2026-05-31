@@ -66,6 +66,10 @@ Never commit real camera URLs, passwords, bot tokens, face images, or incident c
 
 - `GET /health` - service health
 - `GET /api/cameras` - configured cameras
+- `GET /api/cameras/{id}/probe` - test whether a camera source can be opened
+- `GET /api/integrations/go2rtc` - generated go2rtc stream block
+- `GET /api/integrations/frigate` - generated Frigate camera block
+- `GET /api/integrations/home-assistant/mqtt-discovery` - MQTT discovery messages
 - `GET /api/events` - latest events
 - `POST /api/events/demo` - create a synthetic event for setup testing
 - `GET /api/events/{id}/recommendation` - incident agent recommendation

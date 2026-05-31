@@ -6,9 +6,12 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from surveilfusion.agents.incident_agent import IncidentAgent
+from surveilfusion.camera.go2rtc import generate_frigate_camera_block, generate_go2rtc_config
+from surveilfusion.camera.probe import probe_camera
 from surveilfusion.camera.registry import CameraRegistry
 from surveilfusion.core.config import get_settings
 from surveilfusion.core.models import Detection, DetectionKind, EventSeverity, SurveillanceEvent
+from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.memory.event_memory import EventMemory
 from surveilfusion.storage.events import EventStore
 
@@ -42,6 +45,32 @@ async def health() -> dict[str, str]:
 @app.get("/api/cameras")
 async def cameras() -> list[dict]:
     return [state.model_dump(mode="json") for state in registry.all()]
+
+
+@app.get("/api/cameras/{camera_id}/probe")
+async def camera_probe(camera_id: str) -> dict:
+    state = registry.get(camera_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Camera not found")
+    return probe_camera(state.camera.source).__dict__
+
+
+@app.get("/api/integrations/go2rtc")
+async def go2rtc_config() -> dict:
+    cameras_config = [state.camera for state in registry.all()]
+    return generate_go2rtc_config(cameras_config)
+
+
+@app.get("/api/integrations/frigate")
+async def frigate_config() -> dict:
+    cameras_config = [state.camera for state in registry.all()]
+    return {"cameras": generate_frigate_camera_block(cameras_config)}
+
+
+@app.get("/api/integrations/home-assistant/mqtt-discovery")
+async def home_assistant_discovery() -> list[dict[str, object]]:
+    cameras_config = [state.camera for state in registry.all()]
+    return discovery_messages(cameras_config)
 
 
 @app.get("/api/events")
