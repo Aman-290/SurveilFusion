@@ -1,4 +1,4 @@
-from surveilfusion.api.app import main
+from surveilfusion.cli import main
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

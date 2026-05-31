@@ -1,0 +1,9 @@
+cameras:
+  - id: dahua-gate
+    name: Dahua Gate
+    source: rtsp://user:password@192.168.1.22:554/cam/realmonitor?channel=1&subtype=1
+    zone: perimeter
+    tags: [dahua, gate]
+    detect_fps: 4
+    record: true
+    audio: false

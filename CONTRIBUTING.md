@@ -9,6 +9,8 @@ SurveilFusion is aiming to be a practical local-first AI surveillance platform, 
 - Home Assistant, MQTT, Telegram, Matrix, email, and webhook integrations.
 - Edge benchmarks for CPU, NVIDIA Jetson, Raspberry Pi AI Kit, Coral, and low-power mini PCs.
 - Privacy, redaction, encryption, retention, and audit-log improvements.
+- Example camera configs for specific vendors.
+- Dashboard screenshots, demo videos, and docs that help new users succeed quickly.
 
 ## Development
 

@@ -45,7 +45,7 @@ dev = [
 ]
 
 [project.scripts]
-surveilfusion = "surveilfusion.api.app:main"
+surveilfusion = "surveilfusion.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["surveilfusion*"]

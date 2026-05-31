@@ -107,6 +107,8 @@ celerybeat.pid
 .server.pid
 data/
 models/
+generated/
+config/cameras.yml
 env/
 venv/
 ENV/

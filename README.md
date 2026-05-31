@@ -9,6 +9,8 @@ SurveilFusion turns ordinary cameras into a private AI security system: live loc
 ![Docker](https://img.shields.io/badge/Deploy-Docker-2496ED)
 ![Local First](https://img.shields.io/badge/Privacy-Local%20First-35d39a)
 
+**Keywords:** local AI CCTV, AI surveillance, RTSP camera AI, ONVIF camera integration, Home Assistant camera alerts, Docker NVR, edge AI security, private LLM surveillance agent.
+
 ## Why This Exists
 
 Most CCTV systems either record passively or push sensitive video into a vendor cloud. SurveilFusion is designed for the middle path: keep cameras and AI at home, add modern computer vision and agents, and make setup easy enough that people can clone the repo and get value quickly.
@@ -30,7 +32,7 @@ The original project proved the core idea with Flask, YOLO, YAMNet, face recogni
 ```bash
 git clone https://github.com/Aman-290/SurveilFusion.git
 cd SurveilFusion
-copy .env.example .env
+python -m surveilfusion init
 docker compose up --build
 ```
 
@@ -42,8 +44,18 @@ For local Python development:
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e ".[dev]"
-python -m surveilfusion
+surveilfusion init
+surveilfusion doctor
+surveilfusion serve
 ```
+
+Generate camera integration files:
+
+```bash
+surveilfusion export-integrations
+```
+
+This writes `generated/go2rtc.yml`, `generated/frigate.cameras.yml`, and `generated/home-assistant-mqtt-discovery.json`.
 
 ## Configuration
 
@@ -61,6 +73,13 @@ cameras:
 ```
 
 Never commit real camera URLs, passwords, bot tokens, face images, or incident clips.
+
+More examples:
+
+- [Camera onboarding](docs/camera-onboarding.md)
+- [Deployment guide](docs/deployment.md)
+- [Hardware benchmarks](docs/hardware-benchmarks.md)
+- [Agent and remote control safety](docs/agent-safety.md)
 
 ## API
 
@@ -106,6 +125,15 @@ The modernization plan is based on current local AI and video infrastructure pat
 ## Roadmap
 
 See [docs/2026-modernization-plan.md](docs/2026-modernization-plan.md).
+
+Near-term build targets:
+
+- ONVIF discovery wizard and credential test flow.
+- go2rtc-backed WebRTC camera tiles.
+- Detector worker process with CPU/GPU model profiles.
+- Qdrant-backed semantic event memory.
+- Policy-gated remote action center.
+- Screenshot/demo assets for GitHub and search visibility.
 
 ## Contributing
 

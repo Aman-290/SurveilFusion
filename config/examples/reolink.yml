@@ -1,0 +1,9 @@
+cameras:
+  - id: reolink-front
+    name: Reolink Front Door
+    source: rtsp://user:password@192.168.1.20:554/h264Preview_01_sub
+    zone: entrance
+    tags: [reolink, outdoor]
+    detect_fps: 5
+    record: true
+    audio: true

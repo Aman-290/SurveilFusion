@@ -6,6 +6,7 @@ from surveilfusion.core.models import CameraConfig, Detection, DetectionKind, Ev
 from surveilfusion.integrations.home_assistant import discovery_messages
 from surveilfusion.integrations.mqtt import event_to_mqtt
 from surveilfusion.memory.event_memory import EventMemory
+from surveilfusion.onboarding import export_integration_configs, initialize_project, run_doctor
 from surveilfusion.storage.events import EventStore
 
 
@@ -62,3 +63,30 @@ def test_camera_integration_configs() -> None:
     assert "front-door_twoway" in go2rtc["streams"]
     assert frigate["front-door"]["record"]["enabled"] is True
     assert discovery[0]["topic"] == "homeassistant/binary_sensor/surveilfusion/front-door/config"
+
+
+def test_onboarding_init_doctor_and_export(tmp_path: Path) -> None:
+    (tmp_path / "config").mkdir()
+    (tmp_path / ".env.example").write_text("PORT=8080\n", encoding="utf-8")
+    (tmp_path / "config" / "cameras.example.yml").write_text(
+        """
+cameras:
+  - id: front-door
+    name: Front Door
+    source: rtsp://user:pass@camera/stream1
+""",
+        encoding="utf-8",
+    )
+
+    created = initialize_project(tmp_path)
+    report = run_doctor(tmp_path)
+    exported = export_integration_configs(tmp_path / "config" / "cameras.yml", tmp_path / "generated")
+
+    assert ".env" in created
+    assert "config\\cameras.yml" in created or "config/cameras.yml" in created
+    assert report["checks"]["env_file"] is True
+    assert {path.name for path in exported} == {
+        "go2rtc.yml",
+        "frigate.cameras.yml",
+        "home-assistant-mqtt-discovery.json",
+    }
